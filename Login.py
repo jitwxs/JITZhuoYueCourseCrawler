@@ -1,6 +1,6 @@
 #encoding:utf-8
 
-import requests,re
+import requests,re,getpass
 import http.cookiejar as cookielib
 
 from bs4 import BeautifulSoup
@@ -63,7 +63,7 @@ class Login:
 
     def login(self):
         user_name = input('请输入登陆名: ')
-        password = input('请输入密码: ')
+        password = getpass.getpass('请输入密码: ')
 
         post_data = {'username':user_name,
                      'password':password
@@ -72,8 +72,7 @@ class Login:
 
         try:
             login_page = session.post(post_url,headers = headers,data = post_data)
-            print('登陆成功!')
             #保存Cookie
             session.cookies.save()
         except:
-            print('登陆失败!')   
+            print('登陆出现异常!')
