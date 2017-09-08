@@ -30,18 +30,19 @@ def getSoupObj(url,session):
 
 #获取信息类
 class GetContent:
+    session = None
     def __init__(self):
         #验证登陆
         lg = Login()
         while(lg.checkLogin() == False):
             lg.login()
-        session = lg.getSession()
-        self.parserData(session)
+        self.session = lg.getSession()
+        self.parserData()
 
     #返回课程字典
-    def getCourse(self,session):
+    def getCourse(self):
         dict = {}
-        soup = getSoupObj('http://223.2.193.200/moodle/my/',session)
+        soup = getSoupObj('http://223.2.193.200/moodle/my/',self.session)
         if soup != None:
             regionContent = soup('div',{'class':'region-content'})[0]
             hrefs = regionContent('a',{'class':'','href':re.compile(r'course')})
@@ -51,14 +52,14 @@ class GetContent:
         return dict
 
     #获取文件资源
-    def geResources(self,hrefs,session):  
+    def geResources(self,hrefs):  
         #链接字典
         urlsDict = {}
 
         #遍历所有文件
         for i in hrefs:
             #这里的链接并非文件真实下载链接，真实下载链接存在于get请求的响应头中
-            headers = session.head(i['href']).headers
+            headers = self.session.head(i['href']).headers
             headerDict = dict(headers)
 
             #如果响应头中存在链接，则直接保存
@@ -69,7 +70,7 @@ class GetContent:
 
             #如果响应头中不存在链接，则链接存在于html中
             else:
-                contentSoup = getSoupObj(i['href'],session)
+                contentSoup = getSoupObj(i['href'],self.session)
                 if contentSoup is not None :
                     resourceworkarounds = contentSoup('div',{'class':'resourceworkaround'})
                     for j in resourceworkarounds:
@@ -90,7 +91,7 @@ class GetContent:
                  code.write(r.content)
 
     #获取文件夹资源
-    def getFolderContents(self,hrefs,session):
+    def getFolderContents(self,hrefs):
         courseLoc = os.getcwd()
 
         #遍历所有文件夹
@@ -107,7 +108,7 @@ class GetContent:
                 print('建立子文件夹: ' + name)
             os.chdir(folderLoc)
 
-            contentSoup = getSoupObj(url,session)
+            contentSoup = getSoupObj(url,self.session)
             regionContent = contentSoup('div',{'class':'region-content'})[0]
             contentsHrefs = regionContent('a',{'class':'','href':re.compile(r'content')})
 
@@ -123,13 +124,13 @@ class GetContent:
                      code.write(r.content)
 
     #处理主方法
-    def parserData(self,session):
+    def parserData(self):
         #跳转至root目录
         if not os.path.exists(ROOTLOC):
             os.mkdir(NAME)
             print('建立根文件夹: ' + NAME)
         
-        dict = self.getCourse(session)
+        dict = self.getCourse()
         for name,url in dict.items() :
             os.chdir(ROOTLOC)
             courseLoc = ROOTLOC + '\\' + name
@@ -138,7 +139,7 @@ class GetContent:
                 print('建立课程文件夹: ' + name)
             os.chdir(courseLoc)
 
-            soup = getSoupObj(url,session)
+            soup = getSoupObj(url,self.session)
             regionContent = soup('div',{'class':'region-content'})[0]
 
             #得到文件链接列表
@@ -147,5 +148,5 @@ class GetContent:
             #得到文件夹链接列表
             folderHrefs = regionContent('a',{'class':'','href':re.compile(r'folder')})
 
-            self.geResources(resourcesHrefs,session)
-            self.getFolderContents(folderHrefs,session)
+            self.geResources(resourcesHrefs)
+            self.getFolderContents(folderHrefs)
