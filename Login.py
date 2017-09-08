@@ -62,10 +62,10 @@ class Login:
         return session
 
     def login(self):
-        user_name = input('请输入登陆名: ')
+        username = input('请输入登陆名: ')
         password = getpass.getpass('请输入密码: ')
 
-        post_data = {'username':user_name,
+        post_data = {'username':username,
                      'password':password
                     }
         post_url = loginUrl
