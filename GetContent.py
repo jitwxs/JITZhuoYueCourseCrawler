@@ -37,7 +37,22 @@ class GetContent:
         while(lg.checkLogin() == False):
             lg.login()
         self.session = lg.getSession()
-        self.parserData()
+        self.main()
+
+    #确定用户要选择的章节
+    def getSelectChapter(self, chapterDict):
+        chapter_list = list(chapterDict.keys())
+        chapter_list.insert(0,'所有章节')
+        chapter_list.append('退出')
+
+        k = 0
+        print('------章节信息------')
+        for i in chapter_list:
+            print ("%-3d:%-10s"%(k,i))
+            k += 1
+        
+        k = input('请输入要下载的章节序号：')
+        return chapter_list[int(k)]
 
     #返回课程字典 K:课程名 V:课程url
     def getCourse(self):
@@ -150,8 +165,55 @@ class GetContent:
                     with open(name, "wb") as code:
                          code.write(r.content)
 
-    #处理主方法
-    def parserData(self):
+    #处理内容
+    def parserData(self,chapterName,chapterDict, courseLoc):
+        if chapterName == '所有章节':
+            #处理章节
+            for name,soup in chapterDict.items():
+                os.chdir(courseLoc)
+
+                chapterLoc = courseLoc + '\\' + name
+                if not os.path.exists(chapterLoc):
+                    os.mkdir(name)
+                    print('建立章节文件夹: ' + name)
+                os.chdir(chapterLoc)
+
+                #得到文件链接列表
+                resourcesHrefs = soup('a',{'href':re.compile(r'/resource|/content')})
+                    
+                #得到文件夹链接列表
+                folderHrefs = soup('a',{'href':re.compile(r'/folder')})
+
+                if not len(resourcesHrefs) == 0 :
+                    self.geResources(resourcesHrefs)
+                if not len(folderHrefs) == 0 :
+                    self.getFolderContents(folderHrefs)
+        else :
+            os.chdir(courseLoc)
+
+            chapterLoc = courseLoc + '\\' + chapterName
+            if not os.path.exists(chapterLoc):
+                    os.mkdir(chapterName)
+                    print('建立章节文件夹: ' + chapterName)
+            os.chdir(chapterLoc)
+
+            soup = chapterDict.get(chapterName, None)
+            if soup is not None:
+                #得到文件链接列表
+                resourcesHrefs = soup('a',{'href':re.compile(r'/resource|/content')})
+                    
+                #得到文件夹链接列表
+                folderHrefs = soup('a',{'href':re.compile(r'/folder')})
+
+                if not len(resourcesHrefs) == 0 :
+                    self.geResources(resourcesHrefs)
+                if not len(folderHrefs) == 0 :
+                    self.getFolderContents(folderHrefs)
+            else:
+                print('获取内容错误')
+
+    #主方法
+    def main(self):
         #跳转至root目录
         if not os.path.exists(ROOTLOC):
             os.mkdir(NAME)
@@ -161,7 +223,6 @@ class GetContent:
 
         #处理课程
         for name,url in dict.items() :
-
             os.chdir(ROOTLOC)
             courseLoc = ROOTLOC + '\\' + name
             if not os.path.exists(courseLoc):
@@ -171,23 +232,8 @@ class GetContent:
 
             chapterDict = self.getChapters(url)
 
-            #处理章节
-            for name,soup in chapterDict.items():
-
-                os.chdir(courseLoc)
-                chapterLoc = courseLoc + '\\' + name
-                if not os.path.exists(chapterLoc):
-                    os.mkdir(name)
-                    print('建立章节文件夹: ' + name)
-                os.chdir(chapterLoc)
-
-                #得到文件链接列表
-                resourcesHrefs = soup('a',{'href':re.compile(r'/resource|/content')})
-                
-                #得到文件夹链接列表
-                folderHrefs = soup('a',{'href':re.compile(r'/folder')})
-
-                if not len(resourcesHrefs) == 0 :
-                    self.geResources(resourcesHrefs)
-                if not len(folderHrefs) == 0 :
-                    self.getFolderContents(folderHrefs)
+            while True:
+                chapterName = self.getSelectChapter(chapterDict)
+                if chapterName == '退出':
+                    break
+                self.parserData(chapterName, chapterDict, courseLoc)

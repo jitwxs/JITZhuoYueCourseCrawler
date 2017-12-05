@@ -7,4 +7,5 @@ if __name__=="__main__":
     
     gc = GetContent()
 
-    input('\n文件获取完成，按Enter退出程序...')
+    input('\n程序已运行结束，按Enter退出程序...')
+1
