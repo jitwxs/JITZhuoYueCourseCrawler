@@ -5,6 +5,7 @@ from bs4 import BeautifulSoup
 from Login import *
 
 BASELOC = os.getcwd()
+# 根目录名
 NAME = 'Resources'
 ROOTLOC = BASELOC + '\\' + NAME
 
@@ -39,20 +40,46 @@ class GetContent:
         self.session = lg.getSession()
         self.main()
 
-    #确定用户要选择的章节
+    #得到用户输入的序号，输入范围为0 <= n < k
+    def getSelectNo(self, k):
+        n = 0
+        while True:
+            n = input('请输入要下载的课程序号：')
+            if n.isdigit() and int(n) >= 0 and int(n) < k:
+                break
+            else:
+                print('输入不合法，请重新输入！')
+                continue
+        return int(n)
+
+    #得到用户选择的课程名
+    def getSelectCourse(self, courseDict):
+        courseList = list(courseDict.keys())
+        courseList.append('退出')
+
+        k = 0
+        print('------课程信息------')
+        for i in courseList:
+            print ("%-3d:%-10s"%(k,i))
+            k += 1
+
+        n = self.getSelectNo(k)
+        return courseList[n]
+
+    #得到用户选择的章节名
     def getSelectChapter(self, chapterDict):
-        chapter_list = list(chapterDict.keys())
-        chapter_list.insert(0,'所有章节')
-        chapter_list.append('退出')
+        chapterList = list(chapterDict.keys())
+        chapterList.insert(0,'所有章节')
+        chapterList.append('退出')
 
         k = 0
         print('------章节信息------')
-        for i in chapter_list:
+        for i in chapterList:
             print ("%-3d:%-10s"%(k,i))
             k += 1
-        
-        k = input('请输入要下载的章节序号：')
-        return chapter_list[int(k)]
+
+        n = self.getSelectNo(k)
+        return chapterList[n]
 
     #返回课程字典 K:课程名 V:课程url
     def getCourse(self):
@@ -144,7 +171,9 @@ class GetContent:
             folderLoc = courseLoc + '\\' + name
             if not os.path.exists(folderLoc):
                 os.mkdir(name)
-                print('建立子文件夹: ' + name)
+                print('建立子目录: ' + name)
+            else:
+                print('进入子目录: ' + name)
             os.chdir(folderLoc)
 
             contentSoup = getSoupObj(url,self.session)
@@ -175,7 +204,9 @@ class GetContent:
                 chapterLoc = courseLoc + '\\' + name
                 if not os.path.exists(chapterLoc):
                     os.mkdir(name)
-                    print('建立章节文件夹: ' + name)
+                    print('建立章节: ' + name)
+                else:
+                    print('进入章节: ' + name)
                 os.chdir(chapterLoc)
 
                 #得到文件链接列表
@@ -193,8 +224,10 @@ class GetContent:
 
             chapterLoc = courseLoc + '\\' + chapterName
             if not os.path.exists(chapterLoc):
-                    os.mkdir(chapterName)
-                    print('建立章节文件夹: ' + chapterName)
+                os.mkdir(chapterName)
+                print('建立章节: ' + chapterName)
+            else:
+                print('进入章节: ' + chapterName)
             os.chdir(chapterLoc)
 
             soup = chapterDict.get(chapterName, None)
@@ -217,21 +250,28 @@ class GetContent:
         #跳转至root目录
         if not os.path.exists(ROOTLOC):
             os.mkdir(NAME)
-            print('建立根文件夹: ' + NAME)
+            print('建立根目录: ' + NAME)
+        else:
+            print('进入根目录：' + NAME)
         
         dict = self.getCourse()
 
         #处理课程
-        for name,url in dict.items() :
+        while True:
             os.chdir(ROOTLOC)
-            courseLoc = ROOTLOC + '\\' + name
+            courseName = self.getSelectCourse(dict)
+            if courseName == '退出':
+                break
+            courseLoc = ROOTLOC + '\\' + courseName
             if not os.path.exists(courseLoc):
-                os.mkdir(name)
-                print('建立课程文件夹: ' + name)
+                os.mkdir(courseName)
+                print('创建课程: ' + courseName)
+            else:
+                print('进入课程: ' + courseName)
             os.chdir(courseLoc)
 
-            chapterDict = self.getChapters(url)
-
+            #处理章节
+            chapterDict = self.getChapters(dict[courseName])
             while True:
                 chapterName = self.getSelectChapter(chapterDict)
                 if chapterName == '退出':

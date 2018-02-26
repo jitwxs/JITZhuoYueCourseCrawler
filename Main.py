@@ -8,4 +8,3 @@ if __name__=="__main__":
     gc = GetContent()
 
     input('\n程序已运行结束，按Enter退出程序...')
-1

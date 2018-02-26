@@ -64,6 +64,8 @@ class Login:
     def login(self):
         username = input('请输入登陆名: ')
         password = getpass.getpass('请输入密码: ')
+        # 如果不支持上面的getpass，使用下面的语句
+##        password = input('请输入密码: ')
 
         post_data = {'username':username,
                      'password':password
